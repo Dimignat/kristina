@@ -15,34 +15,32 @@ with st.echo(code_location='below'):
         st.subheader('Raw data')
         st.write(data)
 
-    values = st.slider('Select a range of values', 0.0, 100.0, (25.0, 75.0))
-    st.write('Values:', values)
-
-    slider = st.slider("Выберите кол-во стран:",
-                       min_value=1,
+    values = st.slider('Select a range of values', min_value=1,
                        max_value=data.shape[0],
-                       value=int(data.shape[0] / 2),
+                       value=(int(data.shape[0] / 4), int(3 * data.shape[0] / 4)),
                        step=1)
-    st.write("#", slider)
-    df = data[["Ladder score", "Logged GDP per capita", "Country name"]]
-    df = df[df["Logged GDP per capita"] >= df["Logged GDP per capita"].sort_values(ascending=False).iloc[slider - 1]]
+    df = data[["Ladder score", "Logged GDP per capita", "Country name"]].copy()
+    df.rename(columns={"Logged GDP per capita": "GDP per capita", "Ladder score": "Happiness level"}, inplace=True)
+    df.sort_values("GDP per capita", inplace=True)
+    df = df[(df["GDP per capita"] >= df["GDP per capita"].iloc[values[0] - 1]) &
+            (df["GDP per capita"] <= df["GDP per capita"].iloc[values[1] - 1])]
     df.set_index("Country name", inplace=True)
 
     fig = plt.figure(figsize=(16, 10), dpi=80, facecolor='w', edgecolor='k')
 
     for country, info in df.iterrows():
-        x = info['Logged GDP per capita']
-        y = info['Ladder score']
+        x = info['GDP per capita']
+        y = info['Happiness level']
         plt.scatter(x, y, s=100)
         plt.text(x, y, country, fontsize=8)
 
     plt.xticks(fontsize=22)
     plt.yticks(fontsize=22)
-    plt.title("Logged GDP per capita / Ladder score", fontsize=22)
-    plt.xlabel("Logged GDP per capita", fontsize=22)
+    plt.title("GDP per capita / Happiness level", fontsize=22)
+    plt.xlabel("GDP per capita", fontsize=22)
     plt.ylabel("Happiness level", fontsize=22)
     if st.checkbox("Show regression"):
-        sns.regplot(x='Logged GDP per capita', y='Ladder score', data=df, ci=None, order=2, scatter_kws={'color': 'white'},
+        sns.regplot(x='GDP per capita', y='Ladder score', data=df, ci=None, order=2, scatter_kws={'color': 'white'},
                     line_kws={'color': 'red'})
     st.pyplot(fig)
     # """

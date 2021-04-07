@@ -15,6 +15,9 @@ with st.echo(code_location='below'):
         st.subheader('Raw data')
         st.write(data)
 
+    values = st.slider('Select a range of values', 0.0, 100.0, (25.0, 75.0))
+    st.write('Values:', values)
+
     slider = st.slider("Выберите кол-во стран:",
                        min_value=1,
                        max_value=data.shape[0],
@@ -39,7 +42,7 @@ with st.echo(code_location='below'):
     plt.xlabel("Logged GDP per capita", fontsize=22)
     plt.ylabel("Happiness level", fontsize=22)
     if st.checkbox("Show regression"):
-        sns.regplot(x='GDP per capita', y='Ladder score', data=df, ci=None, order=2, scatter_kws={'color': 'white'},
+        sns.regplot(x='Logged GDP per capita', y='Ladder score', data=df, ci=None, order=2, scatter_kws={'color': 'white'},
                     line_kws={'color': 'red'})
     st.pyplot(fig)
     # """

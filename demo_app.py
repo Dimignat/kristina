@@ -18,8 +18,13 @@ with st.echo(code_location='below'):
     df = df[df["Logged GDP per capita"] > df["Logged GDP per capita"].sort_values(ascending=False).iloc[20]]
     df.set_index("Country name", inplace=True)
 
-    slider = st.slider("Выберите кол-во стран:", min_value=0, max_value=data.shape[0], value=data.shape[0] / 2)
+    slider = st.slider("Выберите кол-во стран:",
+                       min_value=0,
+                       max_value=data.shape[0],
+                       value=data.shape[0] / 2,
+                       step=1)
     st.write("#", slider)
+
     fig = plt.figure(figsize=(16, 10), dpi=80, facecolor='w', edgecolor='k')
 
     for country, info in df.iterrows():

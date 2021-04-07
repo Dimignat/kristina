@@ -19,9 +19,9 @@ with st.echo(code_location='below'):
     df.set_index("Country name", inplace=True)
 
     slider = st.slider("Выберите кол-во стран:",
-                       min_value=0,
+                       min_value=1,
                        max_value=data.shape[0],
-                       value=data.shape[0] / 2,
+                       value=int(data.shape[0] / 2),
                        step=1)
     st.write("#", slider)
 

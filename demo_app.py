@@ -13,17 +13,21 @@ with st.echo(code_location='below'):
     if st.checkbox('Show raw data'):
         st.subheader('Raw data')
         st.write(data)
+
     df = data[["Ladder score", "Logged GDP per capita", "Country name"]]
     df = df[df["Logged GDP per capita"] > df["Logged GDP per capita"].sort_values(ascending=False).iloc[20]]
     df.set_index("Country name", inplace=True)
+
+    slider = st.slider("Выберите кол-во стран:", min_value=0, max_value=data.shape[0], value=data.shape[0] / 2)
+    st.write("#", slider)
     fig = plt.figure(figsize=(16, 10), dpi=80, facecolor='w', edgecolor='k')
 
     for country, info in df.iterrows():
         plt.scatter(info['Logged GDP per capita'], info['Ladder score'], s=20, label=country)
     plt.gca().set(xlabel='Logged GDP per capita', ylabel='Ladder score')
 
-    plt.xticks(fontsize=12);
-    plt.yticks(fontsize=12)
+    plt.xticks(fontsize=22)
+    plt.yticks(fontsize=22)
     plt.title("Nu kak", fontsize=22)
     plt.legend(fontsize=12)
     st.pyplot(fig)

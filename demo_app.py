@@ -15,6 +15,8 @@ with st.echo(code_location='below'):
         st.subheader('Raw data')
         st.write(data)
 
+    # FIRST CHART
+
     values = st.slider('Select a range of values', min_value=1,
                        max_value=data.shape[0],
                        value=(int(data.shape[0] / 4), int(3 * data.shape[0] / 4)),
@@ -39,10 +41,43 @@ with st.echo(code_location='below'):
     plt.title("GDP per capita / Happiness level", fontsize=22)
     plt.xlabel("GDP per capita", fontsize=22)
     plt.ylabel("Happiness level", fontsize=22)
-    if st.checkbox("Show regression"):
-        sns.regplot(x='GDP per capita', y='Ladder score', data=df, ci=None, order=2, scatter_kws={'color': 'white'},
+    if st.checkbox("Show regression", key="checkbox1"):
+        sns.regplot(x='GDP per capita', y='Happiness level', data=df, ci=None, order=2, scatter_kws={'color': 'white'},
                     line_kws={'color': 'red'})
     st.pyplot(fig)
+
+
+
+    # SECOND CHART
+    options = data.columns.copy()
+    options = options.drop(['Country name', 'Regional indicator', 'Logged GDP per capita', 'Ladder score'])
+    option = st.selectbox('Select criterion', tuple(options))
+
+    df = data[["Ladder score", option, "Country name"]].copy()
+    df.rename(columns={"Ladder score": "Happiness level"}, inplace=True)
+    df.sort_values(option, inplace=True)
+    df = df[(df[option] >= df[option].iloc[values[0] - 1]) &
+            (df[option] <= df[option].iloc[values[1] - 1])]
+    df.set_index("Country name", inplace=True)
+
+    fig = plt.figure(figsize=(16, 10), dpi=80, facecolor='w', edgecolor='k')
+
+    for country, info in df.iterrows():
+        x = info[option]
+        y = info['Happiness level']
+        plt.scatter(x, y, s=100)
+        plt.text(x, y, country, fontsize=8)
+
+    plt.xticks(fontsize=22)
+    plt.yticks(fontsize=22)
+    plt.title(f"{option} / Happiness level", fontsize=22)
+    plt.xlabel(option, fontsize=22)
+    plt.ylabel("Happiness level", fontsize=22)
+    if st.checkbox("Show regression", key="checkbox2"):
+        sns.regplot(x=option, y='Happiness level', data=df, ci=None, order=2, scatter_kws={'color': 'white'},
+                    line_kws={'color': 'red'})
+    st.pyplot(fig)
+
     # """
     # This is a test.
     # """

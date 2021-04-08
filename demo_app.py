@@ -56,8 +56,6 @@ with st.echo(code_location='below'):
     df = data[["Ladder score", option, "Country name"]].copy()
     df.rename(columns={"Ladder score": "Happiness level"}, inplace=True)
     df.sort_values(option, inplace=True)
-    df = df[(df[option] >= df[option].iloc[values[0] - 1]) &
-            (df[option] <= df[option].iloc[values[1] - 1])]
     df.set_index("Country name", inplace=True)
 
     fig = plt.figure(figsize=(16, 10), dpi=80, facecolor='w', edgecolor='k')

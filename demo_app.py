@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
+
 with st.echo(code_location='below'):
     st.title("2021 World Happiness Report Dashboard")
 
@@ -20,7 +21,8 @@ with st.echo(code_location='below'):
     values = st.slider('Select a range of values', min_value=1,
                        max_value=data.shape[0],
                        value=(int(data.shape[0] / 4), int(3 * data.shape[0] / 4)),
-                       step=1)
+                       step=1,
+                       key="slider1")
     df = data[["Ladder score", "Logged GDP per capita", "Country name"]].copy()
     df.rename(columns={"Logged GDP per capita": "GDP per capita", "Ladder score": "Happiness level"}, inplace=True)
     df.sort_values("GDP per capita", inplace=True)
@@ -50,12 +52,21 @@ with st.echo(code_location='below'):
 
     # SECOND CHART
     options = data.columns.copy()
-    options = options.drop(['Country name', 'Regional indicator', 'Logged GDP per capita', 'Ladder score'])
+    options = options.drop(['Country name', 'Regional indicator', 'Logged GDP per capita', 'Ladder score',
+                            'Standard error of ladder score', 'upperwhisker', 'lowerwhisker'])
     option = st.selectbox('Select criterion', tuple(options))
+
+    values = st.slider('Select a range of values', min_value=1,
+                       max_value=data.shape[0],
+                       value=(int(data.shape[0] / 4), int(3 * data.shape[0] / 4)),
+                       step=1,
+                       key="slider2")
 
     df = data[["Ladder score", option, "Country name"]].copy()
     df.rename(columns={"Ladder score": "Happiness level"}, inplace=True)
     df.sort_values(option, inplace=True)
+    df = df[(df[option] >= df[option].iloc[values[0] - 1]) &
+            (df[option] <= df[option].iloc[values[1] - 1])]
     df.set_index("Country name", inplace=True)
 
     fig = plt.figure(figsize=(16, 10), dpi=80, facecolor='w', edgecolor='k')
@@ -74,6 +85,27 @@ with st.echo(code_location='below'):
     if st.checkbox("Show regression", key="checkbox2"):
         sns.regplot(x=option, y='Happiness level', data=df, ci=None, order=2, scatter_kws={'color': 'white'},
                     line_kws={'color': 'red'})
+    st.pyplot(fig)
+
+    # THIRD CHART
+    countries = data["Country name"].copy().sort_values()
+    country = st.selectbox('Select country', tuple(countries))
+    total_mean = data.mean()
+    country_mean = data[data["Country name"] == country].mean()
+    output = pd.DataFrame([total_mean, country_mean], index=["Overall", country]).transpose()
+    output.drop("Healthy life expectancy", inplace=True)
+
+    fig, axs = plt.subplots(1, len(output.index), figsize=(16, 8))
+    fig.tight_layout()
+    for ax, r in zip(axs, output.index):
+        order = 3
+        if output["Overall"][r] > output[country][r]:
+            order = 1
+        ax.bar(r, output["Overall"][r], zorder=order, color='xkcd:sky blue')
+        ax.bar(r, output[country][r], zorder=2, color='tab:pink')
+        ax.set_xticks([r])
+        ax.set_xticklabels([r], rotation=90)
+    ax.legend(["Overall", country])
     st.pyplot(fig)
 
     # """

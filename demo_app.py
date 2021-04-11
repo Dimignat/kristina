@@ -3,6 +3,15 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 import plotly.express as px
+import json
+
+seen = False
+
+region_color = {'Western Europe': 'xkcd:sky blue', 'North America and ANZ': 'xkcd:purple',
+       'Middle East and North Africa': 'xkcd:royal blue', 'Latin America and Caribbean': 'xkcd:burnt orange',
+       'Central and Eastern Europe': 'xkcd:gold', 'East Asia': 'xkcd:pastel green', 'Southeast Asia': 'xkcd:cerulean',
+       'Commonwealth of Independent States': 'xkcd:light red', 'Sub-Saharan Africa': 'xkcd:greenish yellow',
+       'South Asia': 'xkcd:pink purple'}
 
 lan_lon = {'Finland': (63.2467777, 25.9209164),
              'Denmark': (55.670249, 10.3333283),
@@ -161,11 +170,19 @@ with st.echo(code_location='below'):
 
     data = pd.read_csv("dataset.csv")
 
+    st.write('В своем проекте я рассматриваю влияние различных критериев на уровень счастья.')
+
     if st.checkbox('Show raw data'):
         st.subheader('Raw data')
         st.write(data)
 
     # FIRST CHART (PT1)
+
+    st.write('Распространено мнение, что там, где люди богаче, там они счастливее. '
+             'На графике Вы можете видеть (если нажмете show regression) зависимость между ВВП на душу населения '
+             'и уровнем счастья государства. Также с помощью слайдера вы можете выбирать количество стран, '
+             'которе необходимо отобразить, где справа расположены самые бедные, а слева самые богатые государства '
+             '(с самым большим ВВП на душу населения)')
 
     values = st.slider('Select a range of values', min_value=1,
                        max_value=data.shape[0],
@@ -199,8 +216,12 @@ with st.echo(code_location='below'):
     st.pyplot(fig)
 
     # FIRST CHART (PT2)
+    st.write('Также можно посмотреть, как соответствуют разные регионы общему тренду. '
+             'Вы можете выбрать один или несколько регионов из списка и '
+             'посмотреть как их расположения соотносится с общий для всех стран регрессией')
+
     regions = st.multiselect('Выберите регион:', data["Regional indicator"].unique())
-    df = data[data["Regional indicator"].isin(regions)]
+    df = data[data["Regional indicator"].isin(regions)].copy()
     df.rename(columns={"Logged GDP per capita": "GDP per capita", "Ladder score": "Happiness level"}, inplace=True)
     df.sort_values("GDP per capita", inplace=True)
     df.set_index("Country name", inplace=True)
@@ -210,7 +231,7 @@ with st.echo(code_location='below'):
     for country, info in df.iterrows():
         x = info['GDP per capita']
         y = info['Happiness level']
-        plt.scatter(x, y, s=100)
+        plt.scatter(x, y, s=100, color=region_color[info["Regional indicator"]])
         plt.text(x, y, country, fontsize=8)
 
     plt.xticks(fontsize=22)
@@ -224,10 +245,14 @@ with st.echo(code_location='below'):
     st.pyplot(fig)
 
     # GIF
-    # with open('celluloid_subplots.gif')
+    st.write('Важным я считаю показать необходимость большой выборки. '
+             'Ниже Вы можете посмотреть как выборка влияет на вид регрессии. ')
     st.image('celluloid_subplots.gif')
 
     # SECOND CHART
+    st.write('Далее посмотрим на влияние других факторов на уровень счастья. '
+             'Вы можете выбрать критерий и выборку стран, '
+             'чтобы посмотреть зависимость уровня счастья от выбранного фактора')
     options = data.columns.copy()
     options = options.drop(['Country name', 'Regional indicator', 'Logged GDP per capita', 'Ladder score',
                             'Standard error of ladder score', 'upperwhisker', 'lowerwhisker'])
@@ -265,6 +290,9 @@ with st.echo(code_location='below'):
     st.pyplot(fig)
 
     # THIRD CHART
+    st.write('Теперь рассмотрим данные на одной стране. '
+             'Ниже вы можете выбрать страну и посмотреть как соотносятся данные это страны со средним мировым уровнем.')
+
     countries = data["Country name"].copy().sort_values()
     country = st.selectbox('Select country', tuple(countries))
     total_mean = data.mean()
@@ -283,10 +311,15 @@ with st.echo(code_location='below'):
         ax.bar(r, output[country][r], zorder=2, color='tab:pink')
         ax.set_xticks([r])
         ax.set_xticklabels([r], rotation=90)
-    ax.legend(["Overall", country])  # TODO
+    ax.legend(["Overall", country])
     st.pyplot(fig)
 
     # FOURTH CHART
+    st.write('На последнем графике рассмотрен другой датасет о терроризме. '
+             'На карте ниже Вы можете видеть географическое расположение террористических атак(красный) '
+             'и уровень счастья в этом государстве(синий). Более того, чем больше уровень счастья, '
+             'тем больше синий круг, а чем больше количество террористических атак в этой стране, '
+             'тем больше красный круг')
     st.subheader("Number of terroristic attacks (1970 - 2017) / Happiness level")
     df = data[['Country name', 'Ladder score']].copy()
     years = pd.read_csv('num_of_attacks.csv')
@@ -305,10 +338,23 @@ with st.echo(code_location='below'):
     fig2 = px.scatter_geo(df, lat='lat', lon='lon',
                           size="Happiness level", hover_name="Country name")
 
-    fig = px.scatter_geo(width=800, height=800)
+    fig = px.scatter_geo()
     fig.add_traces(fig1._data)
     fig.add_traces(fig2._data)
     fig.data[0].marker.color = 'rgba(255,0,0,0.4)'
     fig.data[1].marker.color = 'rgba(0,0,255,0.3)'
     st.plotly_chart(fig)
 
+    opinion = st.radio("Вам понравилось?", ['ДА', 'НЕТ'])
+    submit = st.button('Submit')
+    if submit:
+        with open('stats.json', 'r') as file:
+            data = json.load(file)
+            if opinion == 'ДА':
+                data['yes'] += 1
+            else:
+                data['no'] += 1
+        with open('stats.json', 'w') as file:
+            json.dump(data, file)
+        st.balloons()
+        submit = False

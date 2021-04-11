@@ -3,4 +3,3 @@ matplotlib==3.3.4
 streamlit==0.79.0
 seaborn
 plotly
-json
